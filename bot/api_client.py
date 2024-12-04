@@ -26,44 +26,28 @@ class TwitterAPI:
         """
         # self.api = tweepy.Client(bearer_token=BAREAR_TOKEN)
         self.client = Client('en-US')
-        # try:
-        #     if os.path.exists(COOKIE_PATH):
-        #         self.client.load_cookies(COOKIE_PATH)
-        #         print('using cookies')
-        #     else:
-        #         print('using login')
-        #         info_login = self.client.login(
-        #             auth_info_1=USERNAME,
-        #             auth_info_2=EMAIL,
-        #             password=PASSWORD
-        #         )
-        #         print(info_login)
-        #         print(f"\n\n\n type info login: {type(info_login)}")
-        #         self.client.save_cookies(COOKIE_PATH)
-        # except Exception as e:
-        #     logging.error(f"Error during Twitter API authentication: {e}")
-        #     raise e
         
     async def init(self):
         try:
             if os.path.exists(COOKIE_PATH):
                 self.client.load_cookies(COOKIE_PATH)
+                logging.info("Logged using cookies.")
                 print('using cookies')
             else:
                 print('using login')
-                info_login = await self.client.login(
+                await self.client.login(
                     auth_info_1=USERNAME,
                     auth_info_2=EMAIL,
                     password=PASSWORD
                 )
-                print(info_login)
-                print(f"\n\n\n type info login: {type(info_login)}")
+                logging.info("Logged using login form.")
                 self.client.save_cookies(COOKIE_PATH)
+                logging.info("Cookies saved")
         except Exception as e:
             logging.error(f"Error during Twitter API authentication: {e}")
             raise e
 
-    def _parse_user(self, user:User) -> dict:
+    async def _parse_user(self, user:User) -> dict:
         user_info = {
                 "id": user.id,
                 "screen_name": user.screen_name,
