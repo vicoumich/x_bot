@@ -18,26 +18,30 @@ logging.basicConfig(
 
 
 class TwitterAPI:
-    async def __init__(self):
+    def __init__(self):
         """
         Initialize the Twitter API client using credentials from config.py.
         Saves cookies if doesn't exists.
         """
+        # self.api = tweepy.Client(bearer_token=BAREAR_TOKEN)
         try:
             self.client = Client('en-US')
             if os.path.exists(COOKIE_PATH):
                 self.client.load_cookies(COOKIE_PATH)
+                print('using cookies')
             else:
-                self.client.login(
+                print('using login')
+                info_login = self.client.login(
                     auth_info_1=USERNAME,
                     # auth_info_2=EMAIL,
                     password=PASSWORD
                 )
+                print(info_login)
+                print(f"\n\n\n type info login: {type(info_login)}")
                 self.client.save_cookies(COOKIE_PATH)
         except Exception as e:
             logging.error(f"Error during Twitter API authentication: {e}")
             raise e
-        # self.api = tweepy.Client(bearer_token=BAREAR_TOKEN)
 
     def _parse_user(user:User) -> dict:
         user_info = {
@@ -111,7 +115,7 @@ class TwitterAPI:
         :return: A list of tweet objects.
         """
         try:
-            tweets = await self.client.search_tweet(q=query, count=count)
+            tweets = await self.client.search_tweet(query=query, product='Top', count=count)
             logging.info(f"Searched for tweets with query: {query}")
             return tweets
         except Exception as e:
