@@ -6,6 +6,7 @@ import os
 from .config import (
     USERNAME,
     PASSWORD,
+    EMAIL,
     COOKIE_PATH
 )
 
@@ -24,16 +25,35 @@ class TwitterAPI:
         Saves cookies if doesn't exists.
         """
         # self.api = tweepy.Client(bearer_token=BAREAR_TOKEN)
+        self.client = Client('en-US')
+        # try:
+        #     if os.path.exists(COOKIE_PATH):
+        #         self.client.load_cookies(COOKIE_PATH)
+        #         print('using cookies')
+        #     else:
+        #         print('using login')
+        #         info_login = self.client.login(
+        #             auth_info_1=USERNAME,
+        #             auth_info_2=EMAIL,
+        #             password=PASSWORD
+        #         )
+        #         print(info_login)
+        #         print(f"\n\n\n type info login: {type(info_login)}")
+        #         self.client.save_cookies(COOKIE_PATH)
+        # except Exception as e:
+        #     logging.error(f"Error during Twitter API authentication: {e}")
+        #     raise e
+        
+    async def init(self):
         try:
-            self.client = Client('en-US')
             if os.path.exists(COOKIE_PATH):
                 self.client.load_cookies(COOKIE_PATH)
                 print('using cookies')
             else:
                 print('using login')
-                info_login = self.client.login(
+                info_login = await self.client.login(
                     auth_info_1=USERNAME,
-                    # auth_info_2=EMAIL,
+                    auth_info_2=EMAIL,
                     password=PASSWORD
                 )
                 print(info_login)
@@ -43,7 +63,7 @@ class TwitterAPI:
             logging.error(f"Error during Twitter API authentication: {e}")
             raise e
 
-    def _parse_user(user:User) -> dict:
+    def _parse_user(self, user:User) -> dict:
         user_info = {
                 "id": user.id,
                 "screen_name": user.screen_name,
