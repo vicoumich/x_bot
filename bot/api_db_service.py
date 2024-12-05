@@ -17,23 +17,23 @@ class ApiDbService:
         # Pas encore ( à créer à la main )
         # self.tweet_db = tweet_db
 
-    def fetch_and_save_user_info(self, username):
+    async def fetch_and_save_user_info(self, username):
         """
         Récupère les informations utilisateur et les enregistre dans la base de données.
         """
-        user_info = self.api.get_user_info(username)
+        user_info = await self.api.get_user_info(username)
         if user_info:
-            self.user_db.add_user(user_info)
+            await self.user_db.add_user(user_info)
             return user_info
         return None
 
-    def fetch_and_save_followers(self, username, count=100):
+    async def fetch_and_save_followers(self, username, count=100):
         """
         Récupère les followers d'un utilisateur et les enregistre dans la base de données.
         """
-        followers = self.api.get_user_followers(username, count)
+        followers = await self.api.get_user_followers(username, count)
         for follower in followers:
-            self.user_db.add_user(follower)  # Enregistrer chaque follower
+            await self.user_db.add_user(follower)  # Enregistrer chaque follower
         return followers
 
     #### METTRE A JOUR db_manager ####

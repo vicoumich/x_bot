@@ -1,4 +1,5 @@
-import sqlite3
+import asyncio
+import aiosqlite
 import logging
 import re
 
@@ -12,15 +13,19 @@ logging.basicConfig(
 
 class TweetDatabaseManager:
     def __init__(self, db_name="../data/bot.db"):
-        self.conn = sqlite3.connect(db_name)
-        self._create_tweet_table()
+        self.db_name = db_name
+        self.conn = None
 
-    def _create_tweet_table(self):
+    async def init(self):
+        self.conn = await aiosqlite.connect(self.db_name)
+        await self._create_tweet_table()
+
+    async def _create_tweet_table(self):
         """
         Create the 'tweets' table if it doesn't already exist.
         """
-        with self.conn:
-            self.conn.execute('''
+        async with self.conn:
+            await self.conn.execute('''
                 CREATE TABLE IF NOT EXISTS tweets (
                     id BIGINT PRIMARY KEY,
                     user_id BIGINT,
@@ -30,6 +35,7 @@ class TweetDatabaseManager:
                     hashtags TEXT
                 )
             ''')
+            await self.conn.commit()
             logging.info("Table 'tweets' created or already exists.")
 
     def extract_hashtags(self, content):
@@ -42,15 +48,15 @@ class TweetDatabaseManager:
         hashtags = re.findall(r"#\w+", content)
         return ",".join(hashtags)
 
-    def add_tweet(self, tweet):
+    async def add_tweet(self, tweet):
         """
         Add a tweet to the database.
 
         :param tweet: The tweet object returned by the Twitter API.
         """
         hashtags = self.extract_hashtags(tweet.text)
-        with self.conn:
-            self.conn.execute('''
+        async with self.conn:
+            await self.conn.execute('''
                 INSERT OR REPLACE INTO tweets (
                     id, user_id, created_at, retweets_count, likes_count, hashtags
                 ) VALUES (?, ?, ?, ?, ?, ?)
@@ -62,9 +68,10 @@ class TweetDatabaseManager:
                 tweet.favorite_count,
                 hashtags
             ))
+            await self.conn.commit()
             logging.info(f"Tweet ID {tweet.id} added to database.")
 
-    def get_tweets(self, user_id=None):
+    async def get_tweets(self, user_id=None):
         """
         Retrieve tweets from the database, optionally filtered by user_id.
 
@@ -77,19 +84,26 @@ class TweetDatabaseManager:
             query += " WHERE user_id = ?"
             params = (user_id,)
         
-        cursor = self.conn.execute(query, params)
-        return [dict(row) for row in cursor.fetchall()]
+        cursor = await self.conn.execute(query, params)
+        return [dict(row) for row in await cursor.fetchall()]
 
+    async def close(self):
+        if self.conn:
+            await self.conn.close()
 
 
 class UserDatabaseManager:
-    def __init__(self, db_name="./db/data.db"):
-        self.conn = sqlite3.connect(db_name)
-        self._create_user_table()
+    def __init__(self, db_name="../data/bot.db"):
+        self.db_name = db_name
+        self.conn = None
 
-    def _create_user_table(self):
-        with self.conn:
-            self.conn.execute('''
+    async def init(self):
+        self.conn = await aiosqlite.connect(self.db_name)
+        await self._create_user_table()
+
+    async def _create_user_table(self):
+        async with self.conn:
+            await self.conn.execute('''
                 CREATE TABLE IF NOT EXISTS users (
                     id BIGINT PRIMARY KEY,
                     screen_name TEXT,
@@ -109,14 +123,15 @@ class UserDatabaseManager:
                     protected BOOLEAN
                 )
             ''')
-
-    def add_user(self, user):
+            await self.conn.commit()
+    
+    async def add_user(self, user):
         """
         Ajoute ou met à jour un utilisateur dans la base de données. 
         Gère les champs manquants en leur attribuant des valeurs par défaut.
         """
-        with self.conn:
-            self.conn.execute('''
+        async with self.conn:
+            await self.conn.execute('''
                 INSERT OR REPLACE INTO users (
                     id, screen_name, name, description, location, 
                     followers_count, friends_count, statuses_count, 
@@ -147,3 +162,9 @@ class UserDatabaseManager:
                 ),
                 user.get('protected', False) if isinstance(user, dict) else getattr(user, 'protected', False)
             ))
+
+            await self.conn.commit()
+
+    async def close(self):
+        if self.conn:
+            await self.conn.close()
