@@ -21,6 +21,7 @@ class ApiDbService:
         """
         Récupère les informations utilisateur et les enregistre dans la base de données.
         """
+        ## AJOUTE DES APPELS A ASYNCIO.CREATE_TASK POUR PARALLELISER ##
         user_info = await self.api.get_user_info(username)
         if user_info:
             await self.user_db.add_user(user_info)
