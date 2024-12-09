@@ -1,6 +1,6 @@
 # bot/api_client.py
 
-from twikit import Client, User
+from twikit import Client, User, Tweet
 import logging
 import os
 from .config import (
@@ -46,6 +46,18 @@ class TwitterAPI:
         except Exception as e:
             logging.error(f"Error during Twitter API authentication: {e}")
             raise e
+
+    async def _parse_tweet(tweet: Tweet) -> dict:
+        tweet_info = {
+            "id": tweet.id,
+            "user_id": tweet.user.id,
+            "created_at": tweet.created_at,
+            "retweet_count": tweet.retweet_count,
+            "favortie_count": tweet.favorite_count,
+            "created_at_datetime": tweet.created_at_datetime,
+            "text": tweet.text,
+            "lang": tweet.text
+        }
 
     async def _parse_user(self, user:User) -> dict:
         user_info = {
@@ -219,7 +231,7 @@ class TwitterAPI:
             logging.info(f"Error unfollwing '{username}': {e}")
             print(f"Error unfollowing {username}: {e}")
     
-    async def get_user_info(self, username: str):
+    async def get_user_info(self, username=None, id=None):
         """
         Récupère les informations détaillées d'un utilisateur.
 
@@ -228,7 +240,16 @@ class TwitterAPI:
         """
 
         try:
-            user = await self.client.get_user_by_screen_name(screen_name=username)
+            if (id is None):
+                if (username is None):
+                    print("Provide username or id.")
+                    return
+                else:
+                    id = str((await self.get_user_info())["id"])
+                    user = await self.client.get_user_by_screen_name(screen_name=username)
+            else:
+                user = await self.client.get_user_by_id(user_id=id)
+
             user_info = self._parse_user(user)
             logging.info(f"Fetched user info for: {username}")
             return user_info
@@ -260,6 +281,22 @@ class TwitterAPI:
         except Exception as e:
             logging.error(f"Error fetching followers for {username if username else id}: {e}")
             print(f"Error fetching followers for {username if username else id}: {e}")
+            return []
+
+    async def get_user_tweets(self, id=None, username=None, count=40):
+        try:
+            if (id is None):
+                if (username is None):
+                    print("Provide username or id.")
+                    return
+                else:
+                    id = str((await self.get_user_info())["id"])
+            tweets = self.client.get_user_tweets(user_id=id, count=count, tweet_type='Tweets')
+            
+
+        except Exception as e:
+            logging.error(f"Error fetching tweets for {username if username else id}: {e}")
+            print(f"Error fetching tweets for {username if username else id}: {e}")
             return []
 
 ###########################V2###############################()
