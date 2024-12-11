@@ -319,13 +319,23 @@ class TwitterAPI:
                 else:
                     id = str((await self.get_user_info())["id"])
             tweets = self.client.get_user_tweets(user_id=id, count=count, tweet_type='Tweets')
-            
-
+            return tweets
+        
         except Exception as e:
             logging.error(f"Error fetching tweets for {username if username else id}: {e}")
             print(f"Error fetching tweets for {username if username else id}: {e}")
             return []
 
+    async def get_timeline(self, count=20):
+        try:
+            tweets = self.client.get_timeline(count=count)
+            tweets = [self._parse_tweet(tweet) for tweet in tweets]
+            return tweets
+        
+        except Exception as e:
+            logging.error(f"Error fetching timeline (FYP): {e}")
+            print(f"Error fetching timeline (FYP): {e}")
+            return []
 ###########################V2###############################()
     #     id = self.get_user_id_by_username(username=username)
     #     print(f"\n\nid = {id}\n\n")
