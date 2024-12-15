@@ -3,7 +3,7 @@
 from twikit import Client, User, Tweet
 import logging
 import os
-from .config import (
+from config import (
     USERNAME,
     PASSWORD,
     EMAIL,
@@ -11,11 +11,11 @@ from .config import (
 )
 
 # Configure logging
-logging.basicConfig(
-    filename='logs/bot.log',
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s:%(message)s',
-)
+# logging.basicConfig(
+#     filename='logs/bot.log',
+#     level=logging.INFO,
+#     format='%(asctime)s %(levelname)s:%(message)s',
+# )
 
 
 class TwitterAPI:
@@ -84,7 +84,6 @@ class TwitterAPI:
             "urls": tweet.urls,
             "full_text": tweet.full_text,
         }
-
 
     async def _parse_user(self, user:User) -> dict:
         user_info = {
@@ -180,7 +179,7 @@ class TwitterAPI:
                     print("Provide username or id.")
                     return
                 else:
-                    id = str((await self.get_user_info())["id"])
+                    id = str((await self.get_user_info(username=username))["id"])
 
             tweets = await self.client.get_user_tweets(id, count=count)
             logging.info(f"Retrieved timeline for user: {username if username else id}")
@@ -204,7 +203,7 @@ class TwitterAPI:
                     print("Provide username or id.")
                     return
                 else:
-                    id = str((await self.get_user_info())["id"])
+                    id = str((await self.get_user_info(username=username))["id"])
 
             following = await self.client.get_user_following(id, count)
             logging.info(f"Retrieved following list for user: {username if username else id}")
@@ -227,7 +226,7 @@ class TwitterAPI:
                     print("Provide username or id.")
                     return
                 else:
-                    id = str((await self.get_user_info())["id"])
+                    id = str((await self.get_user_info(username=username))["id"])
                     
             await self.client.follow_user(id)
             logging.info(f"Successfully followed '{username if username else id}'")
@@ -249,7 +248,7 @@ class TwitterAPI:
                     print("Provide username or id.")
                     return
                 else:
-                    id = str((await self.get_user_info())["id"])
+                    id = str((await self.get_user_info(username=username))["id"])
 
             await self.client.unfollow_user(id)
             logging.info(f"Successfully unfollowed '{username}'")
@@ -272,12 +271,11 @@ class TwitterAPI:
                     print("Provide username or id.")
                     return
                 else:
-                    id = str((await self.get_user_info())["id"])
                     user = await self.client.get_user_by_screen_name(screen_name=username)
             else:
                 user = await self.client.get_user_by_id(user_id=id)
 
-            user_info = self._parse_user(user)
+            user_info = await self._parse_user(user)
             logging.info(f"Fetched user info for: {username}")
             return user_info
         except Exception as e:
@@ -299,10 +297,10 @@ class TwitterAPI:
                     print("Provide username or id.")
                     return
                 else:
-                    id = str((await self.get_user_info())["id"])
+                    id = str((await self.get_user_info(username=username))["id"])
 
             followers = await self.client.get_user_followers(id)
-            followers = [self._parse_user(u) for u in followers]
+            followers = [await self._parse_user(u) for u in followers]
             logging.info(f"Fetched {len(followers)} followers for: {username if username else id}")
             return followers
         except Exception as e:
@@ -317,7 +315,7 @@ class TwitterAPI:
                     print("Provide username or id.")
                     return
                 else:
-                    id = str((await self.get_user_info())["id"])
+                    id = str((await self.get_user_info(username=username))["id"])
             tweets = self.client.get_user_tweets(user_id=id, count=count, tweet_type='Tweets')
             return tweets
         
@@ -326,11 +324,11 @@ class TwitterAPI:
             print(f"Error fetching tweets for {username if username else id}: {e}")
             return []
 
-    async def get_timeline(self, count=20):
+    async def get_timeline(self, count=20) -> tuple:
         try:
-            tweets = self.client.get_timeline(count=count)
-            tweets = [self._parse_tweet(tweet) for tweet in tweets]
-            return tweets
+            tweets = await self.client.get_timeline(count=count)
+            parsed_tweets = [await self._parse_tweet(tweet) for tweet in tweets]
+            return (tweets, parsed_tweets)
         
         except Exception as e:
             logging.error(f"Error fetching timeline (FYP): {e}")
