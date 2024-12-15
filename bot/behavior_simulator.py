@@ -24,4 +24,5 @@ class BehaviorSimulator:
         """
         delay = random.uniform(min_seconds, max_seconds)
         logging.info(f"Delaying for {delay:.2f} seconds to simulate human behavior.")
+        print(f"Delaying for {delay:.2f} seconds to simulate human behavior.")
         await asyncio.sleep(delay)
